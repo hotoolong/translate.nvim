@@ -16,7 +16,7 @@ endif
 
 let g:loaded_translate = 1
 
-command! -bang -range -nargs=? Translate call translate#translate("<bang>", <line1>, <line2>, <f-args>)
+command! -range -nargs=? Translate call translate#translate(<line1>, <line2>, <f-args>)
 
 nnoremap <silent> <Plug>(Translate) :<C-u>Translate<CR>
 vnoremap <silent> <Plug>(VTranslate) :Translate<CR>
