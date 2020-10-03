@@ -2,16 +2,8 @@
 " License: MIT
 
 let s:endpoint = get(g:, "translate_endpoint", "https://script.google.com/macros/s/AKfycbw_mRV2WossI7ObN0x3XWasgrnlLl1GppxsQ7EPCZKDj85sMNI/exec")
-
-let s:translate_bufname = "translate://result"
-let s:last_popup_window = 0
+let s:all_floatwins = {}
 let s:result = []
-let s:vim = {}
-let s:nvim = {}
-
-function! s:vim.job_start(cmd, op) abort
-  call job_start(a:cmd, a:op)
-endfunction
 
 function! s:echoerr(msg) abort
   echohl ErrorMsg
@@ -19,8 +11,21 @@ function! s:echoerr(msg) abort
   echohl None
 endfunction
 
+function! s:on_cursor_moved() abort
+  let buf_num = bufnr('%')
+  if !has_key(s:all_floatwins, buf_num)
+    autocmd! plugin-translate-close * <buffer>
+    return
+  endif
+  let win_id = s:all_floatwins[buf_num]
+  if nvim_win_is_valid(win_id)
+    call nvim_win_close(win_id, v:true)
+  endif
+  unlet! s:all_floatwins[buf_num]
+endfunction
+
 " translate
-function! translate#translate(bang, start, end, ...) abort
+function! translate#translate(start, end, ...) abort
   if !has('nvim')
     call s:echoerr("translate.nvim can be executed by neovim.")
     return
@@ -42,16 +47,10 @@ function! translate#translate(bang, start, end, ...) abort
     return
   endif
 
-  let cmd = s:create_cmd(text, a:bang)
+  let cmd = s:create_command(text)
 
   echo "Translating..."
-  let s:result = []
-  let opt = {
-      \ 'on_stdout': function('s:tran_out_cb_nvim'),
-      \ 'on_stderr': function('s:tran_out_cb_nvim'),
-      \ 'on_exit': function('s:tran_exit_cb_nvim')
-    \ }
-  call jobstart(cmd, opt)
+  call jobstart(cmd, { 'on_stdout': function('s:callback_result'), 'on_exit': function('s:finish_translate') })
 endfunction
 
 " get text from selected lines or args
@@ -65,99 +64,65 @@ function! s:getline(start, end, ln, args) abort
 endfunction
 
 " create curl command
-function! s:create_cmd(text, bang) abort
+function! s:create_command(text) abort
   let source = get(g:, "translate_source", "en")
   let target = get(g:, "translate_target", "ja")
-
-  let cmd = ["curl", "-s", "-L", s:endpoint, "-d"]
-  if a:bang == '!'
-    let body = json_encode({'source': target, 'target': source, 'text': a:text})
-    let cmd = cmd + [body]
-  else
-    lt body = json_encode({'source': source, 'target': target, 'text': a:text})
-    let cmd = cmd + [body]
-  endif
-  return cmd
+  let params = json_encode({'source': source, 'target': target, 'text': a:text})
+  let command = ["curl", "-d", params, "-sL", s:endpoint]
+  return command
 endfunction
 
 " get command result
-function! s:tran_out_cb_nvim(ch, msg, event) abort
+function! s:callback_result(ch, msg, event) abort
   call add(s:result, a:msg)
 endfunction
 
 " set command result to translate window buffer
-function! s:tran_exit_cb_nvim(job, status, event) abort
-  echo ""
-  call s:create_window()
-endfunction
-
-function! s:filter(id, key) abort
-  if a:key ==# 'y'
-    call setreg(v:register, s:result)
-    call popup_close(a:id)
-    return 1
-  endif
+function! s:finish_translate(job, status, event) abort
+  call s:create_flaotwindow()
 endfunction
 
 " create translate result window
-function! s:create_window() abort
+function! s:create_flaotwindow() abort
   if empty(s:result)
     call s:echoerr("no translate result")
     return
   endif
 
-  if exists("*popup_atcursor") && get(g:, "translate_popup_window", 1)
-    call popup_close(s:last_popup_window)
-    " get max width
-    let maxwidth = 30
-    for str in s:result
-      let length = len(str)
-      if  length > maxwidth
-        let maxwidth = length
+  let results = []
+  let maxwidth = 0
+  for list in s:result
+    if len(list) > 0
+      let str = list[0]
+      if len(str) < 1
+        continue
       endif
-    endfor
 
-    let pos = getpos(".")
-    let result_height = len(s:result) + 2 " 2 is border thickness
-
-    let line = "cursor-" . printf("%d", result_height)
-    if pos[1] < result_height
-      let line = "cursor+1"
+      let data = json_decode(l:str)
+      let lines = split(l:data["result"], "\n")
+      for line in l:lines
+        let length = strlen(line)
+        if length > maxwidth
+          let maxwidth = length
+        endif
+        call add(l:results, l:line)
+      endfor
     endif
+  endfor
 
-    let s:last_popup_window = popup_atcursor(s:result, {
-          \ "pos":"topleft",
-          \ "border": [1, 1, 1, 1],
-          \ "line": line,
-          \ "maxwidth": maxwidth,
-          \ 'borderchars': ['-','|','-','|','+','+','+','+'],
-          \ "moved": "any",
-          \ "filter": function("s:filter"),
-          \ })
-  else
-    let current = win_getid()
-    let winsize = get(g:,"translate_winsize", len(s:result) + 2)
-
-    if !bufexists(s:translate_bufname)
-      " create new buffer
-      execute str2nr(winsize) . "new" s:translate_bufname
-      set buftype=nofile
-      set ft=translate
-      nnoremap <silent> <buffer> q :<C-u>bwipeout!<CR>
-    else
-      " focus translate window
-      let tranw = bufnr(s:translate_bufname)
-      let winid = win_findbuf(tranw)
-      if empty(winid)
-        execute str2nr(winsize) . "new | e" s:translate_bufname
-      else
-        call win_gotoid(winid[0])
-      endif
-    endif
-
-    " set tranlsate result
-    silent % d _
-    call setline(1, join(s:result, ','))
-    call win_gotoid(current)
-  endif
+  let configs = {
+    \ 'relative': 'cursor',
+    \ 'width': maxwidth,
+    \ 'height': len(l:results),
+    \ 'row': 1,
+    \ 'col': 1,
+    \ 'style': 'minimal',
+    \ }
+  let buf = nvim_create_buf(v:false, v:true)
+  call nvim_buf_set_lines(buf, 0, -1, v:true, l:results)
+  let win_id = nvim_open_win(buf, v:false, l:configs)
+  let s:all_floatwins[bufnr('%')] = win_id
+  augroup plugin-translate-close
+    autocmd CursorMoved,CursorMovedI,InsertEnter <buffer> call <SID>on_cursor_moved()
+  augroup END
 endfunction
