@@ -1,7 +1,7 @@
 " Author: hotoolong <hotoolong.hogehoge@gmail.com>
 " License: MIT
 
-let s:endpoint = get(g:, "translate_endpoint", "https://script.google.com/macros/s/AKfycbw_mRV2WossI7ObN0x3XWasgrnlLl1GppxsQ7EPCZKDj85sMNI/exec")
+let s:endpoint = get(g:, "translate_endpoint", "https://script.google.com/macros/s/AKfycbzkDzp_dcafykiegGEDpRPDBrsqcgr-tBu-ypahrSqggU8Rsk6G/exec")
 let s:floatwindows = {}
 
 function! s:echoerr(errmsg) abort
