@@ -37,10 +37,11 @@ Translate specified words
 " result: こんにちは私の名前はホットウーロンです
 :Translate hello my name is hotoolong
 ```
-Reverse between resource and target to translate when using "!"
+
+If there is anything other than English, it will be translated into Japanese.
 ```vim
 " result: It's a hotoolong
-:Translate! ホットウーロンです
+:Translate ホットウーロンです
 ```
 
 Translate selected lines
