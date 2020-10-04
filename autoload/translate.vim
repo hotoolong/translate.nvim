@@ -2,26 +2,28 @@
 " License: MIT
 
 let s:endpoint = get(g:, "translate_endpoint", "https://script.google.com/macros/s/AKfycbw_mRV2WossI7ObN0x3XWasgrnlLl1GppxsQ7EPCZKDj85sMNI/exec")
-let s:all_floatwins = {}
-let s:result = []
+let s:floatwindows = {}
 
-function! s:echoerr(msg) abort
+function! s:echoerr(errmsg) abort
   echohl ErrorMsg
-  echo "[translate.nvim]" a:msg
+  echomsg "[translate.nvim]"
+  for line in split(a:errmsg, "\n")
+    echomsg line
+  endfor
   echohl None
 endfunction
 
 function! s:on_cursor_moved() abort
   let buf_num = bufnr('%')
-  if !has_key(s:all_floatwins, buf_num)
+  if !has_key(s:floatwindows, buf_num)
     autocmd! plugin-translate-close * <buffer>
     return
   endif
-  let win_id = s:all_floatwins[buf_num]
+  let win_id = s:floatwindows[buf_num]
   if nvim_win_is_valid(win_id)
     call nvim_win_close(win_id, v:true)
   endif
-  unlet! s:all_floatwins[buf_num]
+  unlet! s:floatwindows[buf_num]
 endfunction
 
 " translate
@@ -37,20 +39,14 @@ function! translate#translate(start, end, ...) abort
   endif
 
   let ln = "\n"
-  if &ff == "dos"
-    let ln = "\r\n"
-  endif
-
   let text = s:getline(a:start, a:end, ln, a:000)
   if empty(text)
     call s:echoerr("text is emtpy")
     return
   endif
-
-  let cmd = s:create_command(text)
-
   echo "Translating..."
-  call jobstart(cmd, { 'on_stdout': function('s:callback_result'), 'on_exit': function('s:finish_translate') })
+  let s:result = []
+  call jobstart(s:create_command(text), { 'on_stdout': function('s:callback_result'), 'on_exit': function('s:finish_translate') })
 endfunction
 
 " get text from selected lines or args
@@ -65,11 +61,19 @@ endfunction
 
 " create curl command
 function! s:create_command(text) abort
-  let source = get(g:, "translate_source", "en")
-  let target = get(g:, "translate_target", "ja")
-  let params = json_encode({'source': source, 'target': target, 'text': a:text})
-  let command = ["curl", "-d", params, "-sL", s:endpoint]
+  let convert_table = s:is_english(a:text)
+    \ ? {'source': 'en', 'target': 'ja', 'text': a:text}
+    \ : {'source': 'ja', 'target': 'en', 'text': a:text}
+  let command = ["curl", "-d", json_encode(convert_table), "-sL", s:endpoint]
   return command
+endfunction
+
+function! s:is_english(text) abort
+  if match(a:text, '^[[:alnum:][:space:]_.,()"$''"-<>?!//\\]\+$') == 0
+    return v:true
+  else
+    return v:false
+  endif
 endfunction
 
 " get command result
@@ -121,7 +125,7 @@ function! s:create_flaotwindow() abort
   let buf = nvim_create_buf(v:false, v:true)
   call nvim_buf_set_lines(buf, 0, -1, v:true, l:results)
   let win_id = nvim_open_win(buf, v:false, l:configs)
-  let s:all_floatwins[bufnr('%')] = win_id
+  let s:floatwindows[bufnr('%')] = win_id
   augroup plugin-translate-close
     autocmd CursorMoved,CursorMovedI,InsertEnter <buffer> call <SID>on_cursor_moved()
   augroup END
