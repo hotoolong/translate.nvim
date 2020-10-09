@@ -55,6 +55,14 @@ nmap gr <Plug>(Translate)
 vmap t <Plug>(VTranslate)
 ```
 
+# Option
+
+To set the option to register the translation in the registry, do the following.
+
+```vim
+let g:translate_copy_result = 1
+```
+
 # Demo
 
 ![動作サンプル](images/translate.nvim.gif)
