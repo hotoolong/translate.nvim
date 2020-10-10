@@ -69,7 +69,7 @@ function! s:create_command(text) abort
 endfunction
 
 function! s:is_english(text) abort
-  if match(a:text, '^[[:alnum:][:space:]_.,()"$''"-<>?!//\\]\+$') == 0
+  if match(a:text, '^[[:alnum:][:space:]_.,()"$''"-<>?!//\\`]\+$') == 0
     return v:true
   else
     return v:false
