@@ -118,7 +118,6 @@ function! s:create_flaotwindow() abort
 endfunction
 
 function! s:window_height(result)
-
   let lines = split(a:result, "\n")
   return len(l:lines)
 endfunction
@@ -127,7 +126,7 @@ function! s:window_maxwidth(result) abort
   let max_width = 0
   let lines = split(a:result, "\n")
   for line in l:lines
-    let length = strlen(l:line)
+    let length = strwidth(l:line)
     if length > max_width
       let max_width = length
     endif
