@@ -92,41 +92,57 @@ function! s:create_flaotwindow() abort
     call s:echoerr("no translate result")
     return
   endif
+  let result_data = s:get_translate_result()
 
-  let results = []
-  let maxwidth = 0
+  if g:translate_copy_result
+    call setreg(v:register, l:result_data)
+  endif
+
+  let configs = {
+    \ 'relative': 'cursor',
+    \ 'width': s:window_maxwidth(l:result_data),
+    \ 'height': s:window_height(l:result_data),
+    \ 'row': 1,
+    \ 'col': 1,
+    \ 'style': 'minimal',
+    \ }
+
+
+  let buf = nvim_create_buf(v:false, v:true)
+  call nvim_buf_set_lines(buf, 0, -1, v:true, split(result_data, "\n"))
+  let win_id = nvim_open_win(buf, v:false, l:configs)
+  let s:floatwindows[bufnr('%')] = win_id
+  augroup plugin-translate-close
+    autocmd CursorMoved,CursorMovedI,InsertEnter <buffer> call <SID>on_cursor_moved()
+  augroup END
+endfunction
+
+function! s:window_height(result)
+
+  let lines = split(a:result, "\n")
+  return len(l:lines)
+endfunction
+
+function! s:window_maxwidth(result) abort
+  let max_width = 0
+  let lines = split(a:result, "\n")
+  for line in l:lines
+    let length = strlen(l:line)
+    if length > max_width
+      let max_width = length
+    endif
+  endfor
+  return l:max_width
+endfunction
+
+function! s:get_translate_result() abort
   for list in s:result
     if len(list) > 0
       let str = list[0]
       if len(str) < 1
         continue
       endif
-
-      let data = json_decode(l:str)
-      let lines = split(l:data["result"], "\n")
-      for line in l:lines
-        let length = strlen(line)
-        if length > maxwidth
-          let maxwidth = length
-        endif
-        call add(l:results, l:line)
-      endfor
+      return json_decode(l:str)['result']
     endif
   endfor
-
-  let configs = {
-    \ 'relative': 'cursor',
-    \ 'width': maxwidth,
-    \ 'height': len(l:results),
-    \ 'row': 1,
-    \ 'col': 1,
-    \ 'style': 'minimal',
-    \ }
-  let buf = nvim_create_buf(v:false, v:true)
-  call nvim_buf_set_lines(buf, 0, -1, v:true, l:results)
-  let win_id = nvim_open_win(buf, v:false, l:configs)
-  let s:floatwindows[bufnr('%')] = win_id
-  augroup plugin-translate-close
-    autocmd CursorMoved,CursorMovedI,InsertEnter <buffer> call <SID>on_cursor_moved()
-  augroup END
 endfunction
