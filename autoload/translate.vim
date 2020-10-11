@@ -83,6 +83,7 @@ endfunction
 
 " set command result to translate window buffer
 function! s:finish_translate(job, status, event) abort
+  echo ''
   call s:create_flaotwindow()
 endfunction
 
