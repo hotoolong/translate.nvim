@@ -1,0 +1,16 @@
+------------------------------------------------------------------------------
+CONTENTS                                             *translate-contents*
+
+  VARIABLES        |translate-variables|
+  COMMANDS         |translate-commands|
+------------------------------------------------------------------------------
+VARIABLES                                            *translate-variables*
+
+g:translate_copy_result                              *g:translate_copy_result*
+Copy the translated data
+
+------------------------------------------------------------------------------
+COMMANDS                                             *translate-commands*
+
+:Translate {text}                                    *:Translate*
+
