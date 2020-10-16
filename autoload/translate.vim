@@ -38,8 +38,7 @@ function! translate#translate(start, end, ...) abort
     return
   endif
 
-  let ln = "\n"
-  let text = s:getline(a:start, a:end, ln, a:000)
+  let text = s:getline(a:start, a:end, a:000)
   if empty(text)
     call s:echoerr("text is emtpy")
     return
@@ -50,13 +49,14 @@ function! translate#translate(start, end, ...) abort
 endfunction
 
 " get text from selected lines or args
-function! s:getline(start, end, ln, args) abort
-  let text = getline(a:start, a:end)
-  if !empty(a:args)
+function! s:getline(start, end, args) abort
+  if empty(a:args)
+    let text = getline(a:start, a:end)
+  else
     let text = a:args
   endif
 
-  return join(text, a:ln)
+  return join(text, "\n")
 endfunction
 
 " create curl command
