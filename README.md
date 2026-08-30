@@ -1,10 +1,12 @@
 # translate.nvim
 
+[![CI](https://github.com/hotoolong/translate.nvim/actions/workflows/ci.yml/badge.svg)](https://github.com/hotoolong/translate.nvim/actions/workflows/ci.yml)
+
 Translate between Japanese English and English Japanese
 
 # Requirement
 - curl
-- neovim 0.4.0 or above
+- neovim 0.10.0 or above
 
 # Installtion
 
