@@ -1,8 +1,14 @@
 ------------------------------------------------------------------------------
 CONTENTS                                             *translate-contents*
 
+  REQUIREMENTS     |translate-requirements|
   VARIABLES        |translate-variables|
   COMMANDS         |translate-commands|
+------------------------------------------------------------------------------
+REQUIREMENTS                                         *translate-requirements*
+
+  Neovim 0.10.0 or later, and curl.
+
 ------------------------------------------------------------------------------
 VARIABLES                                            *translate-variables*
 
