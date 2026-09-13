@@ -8,7 +8,7 @@ Translate between Japanese English and English Japanese
 - curl
 - neovim 0.10.0 or above
 
-# Installtion
+# Installation
 
 Please install using a plug-in manager or the like.
 
