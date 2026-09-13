@@ -25,6 +25,28 @@ eg: Plugin
 Plug 'hotoolong/translate.nvim'
 ```
 
+# Version
+
+Releases are tagged, so you can pin to one instead of following the default branch.
+
+eg: dein.vim
+
+```toml
+[[plugins]]
+repo = 'hotoolong/translate.nvim'
+rev = 'v1.0.0'
+```
+
+eg: Plugin
+
+```vim
+Plug 'hotoolong/translate.nvim', { 'tag': 'v1.0.0' }
+```
+
+If your Neovim is older than 0.10.0, pin to `v0.1.0`. That is the last release of the
+Vimscript implementation and it runs on Neovim 0.4.0 and later. Releases from `v1.0.0`
+onward need 0.10.0 because they use `vim.system()`, `vim.json`, and `vim.health.start`.
+
 # Usage
 
 Converts Japanese to English and English to Japanese.
